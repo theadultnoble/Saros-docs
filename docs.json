@@ -18,12 +18,23 @@
             "pages": ["index", "quickstart"]
           },
           {
-            "group": "DLMM",
+            "group": "AMM SDK",
+            "pages": ["quickstart", "essentials/swapping", "essentials/staking"]
+          },
+          {
+            "group": "DLMM SDK",
             "pages": [
+              "quickstart",
               "essentials/swapping",
               "essentials/liquidity",
+              "essentials/positions-DLMM",
+              "essentials/farming",
               "essentials/reference"
             ]
+          },
+          {
+            "group": "Rust SDK",
+            "pages": ["quickstart", "essentials/rust-examples"]
           }
         ]
       },
