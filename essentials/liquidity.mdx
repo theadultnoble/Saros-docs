@@ -1,0 +1,222 @@
+---
+title: "Adding & Removing Liquidity"
+description: "This guide will cover adding and removing liquidity positions in a pool using the Saros DLMM engine and its special bin architecture. A full working example of the code shown and discussed in this guide can be found [here](https://www.npmjs.com/package/@saros-finance/dlmm-sdk). The pool pair we will be modifying is the **WSOL-SAROS** pair. 
+"
+---
+
+In this guide, the following packages are used:
+
+- `@saros-finance/dlmm-sdk`
+- `@solana/web3.js`
+
+At the end of the guide, you will have a full understanding of how to manipulate positions to add and remove liquidity from a liquidity pool using the new DLMM engine as an LP.
+
+<Info>
+  All examples in this guide are demonstrated on the **Solana** Devnet, not on
+  Mainnet. Avoid using your personal wallet or private keys for these
+  transactions. Instead, use disposable accounts to ensure you don’t risk
+  exposing sensitive information or losing real funds.
+</Info>
+
+For this tutorial, we’ll assume a liquidity pool for the **WSOL-SAROS** pair already exists. The **tokens**, **payer**, and \*\*pair\*\* values used here are the same as those introduced in the [swapping guide](https://www.notion.so/Swapping-2612c2cd026980a695b7ed2bbc19f132?pvs=21). If needed, refer back to that section to retrieve the required values.
+
+## Add Liquidity with `addLiquidityIntoPosition`
+
+Unlike traditional AMMs that manage liquidity pools using formulas such as (x \* y = k), the DLMM model breaks liquidity into discrete **bins** at specific price levels.
+
+When adding liquidity across these bins, we define the `shape` of how liquidity is distributed over price ranges, along with the `binRange` our tokens will cover. In this example, we’ll supply liquidity across 10 bins above and below the active (current) bin.
+
+```tsx
+import { LiquidityShape } from "@saros-finance/dlmm-sdk";
+
+const shape = LiquidityShape.Spot;
+const binRange = [-10, 10];
+```
+
+Setting a tighter `binRange` means concentrated liquidity, earning more fees per bin, but at a higher risk.
+
+If you’re not yet familiar with these concepts, we recommend reviewing the [Shapes and Strategies Guide](https://docs.saros.xyz/saros-dlmm/shapes-and-strategies) before continuing.
+
+A bin range exists across multiple bin arrays. We compute the bin arrays that cover the requested range. The helper `getMaxBinArray` takes as parameters the range and active bin, and returns `binArrayList`.
+
+While `getMaxPosition` will ensure binRange is split into valid, \*\*\*\*on-chain-compatible chunks that can actually be created as positions. It returns an array of numbers.
+
+```tsx
+import { LiquidityBookServices } from "@saros-finance/dlmm-sdk";
+import { getMaxPosition, getMaxBinArray } from "@saros-finance/dlmm-sdk/utils";
+
+const pairInfo = await LiquidityBookServices.getPairAccount(pair);
+const activeBin = pairInfo.activeId;
+
+const maxPositionList = getMaxPosition([binRange[0], binRange[1]], activeBin);
+const binArrayList = getMaxBinArray(binRange, activeBin);
+```
+
+In DLMM, a non-fungible token (NFT) is minted to represent a liquidity position secured when you add liquidity to a bin. For each `maxPositionList` item (a discrete position span covering part of your range), we will check if an NFT is missing for that position, and then create one on-chain using `createPosition` function. The function requires a `binArrayIndex` We will get from calculating the `binArray`. A list of bin array index pairs needed for a transaction
+
+```tsx
+for (const item of maxPositionList) {
+  const { relativeBinRange, binUpper, binLower } = getBinRange(item, activeBin);
+
+  const binArray = binArrayList.find(
+    (item) =>
+      item.binArrayLowerIndex * 256 <= binLower &&
+      (item.binArrayUpperIndex + 1) * 256 > binUpper
+  )!;
+  const binArrayLower = await liquidityBookServices.getBinArray({
+    binArrayIndex: binArray.binArrayLowerIndex,
+    pair: new PublicKey(pair),
+    payer,
+  });
+  const binArrayUpper = await liquidityBookServices.getBinArray({
+    binArrayIndex: binArray.binArrayUpperIndex,
+    pair: new PublicKey(pair),
+    payer,
+  });
+
+  // Create position logic will live here
+}
+```
+
+We’ve got a list of bin arrays (`binArrayList`). Each bin array is a chunk of 256 bins, with a lower index and an upper index. We find the bin array that fully contains the bin range we’re working with from `binLower` to `binUpper`. Knowing which bin array contains the right bin range, the SDK can add liquidity in the right chunk.
+
+Each mint requires a unique `Keypair` and a `Transaction` signed by both the payer and the new keypair.
+
+```tsx
+// Check if a position already exists
+
+if (!currentPosition) {
+  // Mint a new position for this bin range
+  const { position } = await LiquidityBookServices.createPosition({
+    pair,
+    payer,
+    relativeBinIdLeft: relativeBinRange[0],
+    relativeBinIdRight: relativeBinRange[1],
+    binArrayIndex: binArray.binArrayLowerIndex,
+    positionMint: Keypair.generate().publicKey,
+    transaction: new Transaction(),
+  });
+}
+```
+
+`createPosition` will receive these new parameters:
+
+- `relativeBinIdLeft` defines the left (lower) boundary of the liquidity range you want to cover, relative to the active bin.
+  - Value comes from: the first element of your bin range array.
+- `binArrayIndex` specifies the index of the bin array where the new position should be created.
+  - Value comes from: `binArray.binArrayLowerIndex`, which is the starting index of the bin array covering your chosen range.
+
+The last thing we need to do before building our add liquidity logic is to define the value of `liquidityDistribution`. In here `maxLiqDistribution` represents how liquidity would be spread across ALL bins in the chosen range, up to the maximum allowed. From that, you can pick out which bins to actually fund.
+
+```tsx
+const maxLiqDistribution = createUniformDistribution({
+  shape,
+  binRange,
+});
+
+const maxLiqDistribution = createUniformDistribution({
+  shape: LiquidityShape.Spot,
+  binRange: [-10, 10], // 21 bins total
+});
+
+const liquidityDistribution = maxLiqDistribution.slice(7, 13); // Bins -3 to 2
+```
+
+<Info>
+
+This example assumes which indices correspond to the desired bins (-3 to 2). In production, you should look up the start and end bins dynamically by matching their `relativeBinId`.
+
+</Info>
+
+Now that we have `positionMint` values, we prepare the actual `addLiquidityIntoPosition` transactions to distribute liquidity across the target bins.
+
+```tsx
+Import {createUniformDistribution } from from "@saros-finance/dlmm-sdk/utils";
+
+  await liquidityBookServices.addLiquidityIntoPosition({
+    amountX: amount,
+    amountY: amount,
+    binArrayLower: new PublicKey(binArrayLower),
+    binArrayUpper: new PublicKey(binArrayUpper),
+    liquidityDistribution: createUniformDistribution({ shape, binRange }),
+    pair,
+    positionMint: new PublicKey(positionMint),
+    payer,
+    transaction: new Transaction(),
+  });
+}
+```
+
+Sign the `addLiquidityIntoPosition` transaction to add liquidity `amount` to **WSOL-SAROS.**
+
+## Removing liquidity with `removeMultipleLiquidity`
+
+This section, removing liquidity from a pool, will establish who is removing liquidity, from which pool, and in what form (**tokenX**, **tokenY**, or **both**)**.** The process will somewhat be similar in logic, with distinctions highlighted. \*\*\*\*
+
+Every pool has an `activeId` (the currently active bin). Define a removal range around that active bin.
+
+```tsx
+Import { RemoveLiquidityType } from "@saros-finance/dlmm-sdk/types/services";
+
+const type = RemoveLiquidityType.Both; // remove both tokens
+
+if (!type) {
+  throw new Error("Invalid parameters");
+}
+
+const range = [activeId - 3, activeId + 3];
+```
+
+`getUserPositions` will find all user positions for the pair, and then we filter to positions from which we can actually remove liquidity using the `range`.
+
+```tsx
+Import { PositionInfo } from "@saros-finance/dlmm-sdk/types/services";
+
+const positions = await liquidityBookServices.getUserPositions({ payer, pair });
+
+const positionList = positions.filter((item: PositionInfo) => {
+  return !(item.upperBinId < range[0] || item.lowerBinId > range[1]);
+});
+
+if (!positionList.length) throw Error("No position found in this range");
+```
+
+`PositionInfo` is a simple type for checking each position item
+
+To remove liquidity, precise bin bounds are needed to act on. `maxPositionList` pulls the exact bin window from `positionList` to remove within the requested range. Its return values now match the SDK’s expected shape `(maxPositionList: { position, start, end, positionMint }[])`.
+
+```tsx
+const maxPositionList = positionList.map((item: PositionInfo) => {
+  const start = range[0] > item.lowerBinId ? range[0] : item.lowerBinId;
+  const end = range[1] < item.upperBinId ? range[1] : item.upperBinId;
+
+  return {
+    position: item.position,
+    start,
+    end,
+    positionMint: item.positionMint,
+  };
+});
+```
+
+Lastly, we build the transaction `removeLiquidityTx` with `removeMultipleLiquidity` function.
+
+```tsx
+const removeLiquidityTx = await liquidityBookServices.removeMultipleLiquidity({
+  maxPositionList,
+  payer,
+  type,
+  pair,
+  tokenMintX: new PublicKey(tokenX.mintAddress),
+  tokenMintY: new PublicKey(tokenY.mintAddress),
+  activeId,
+});
+```
+
+You can now remove liquidity positions from the **WSOL-SAROS** pair.
+
+<Info>
+
+To remove only a portion of liquidity, you’ll need to manage it at the position \**\*\*level by calculating which bin ranges represent approximately *X%\* of your position—the share you intend to remove.
+
+</Info>

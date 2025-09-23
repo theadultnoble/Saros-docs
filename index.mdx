@@ -1,97 +1,53 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Saros (The DEX tool)"
+description: "Welcome to the Saros-SDK development guides. This guide will serve as a comprehensive resource for everything you need to know to start building with Saros's Kit. To learn more about Saros and what we offer, we recommend visiting our [official documentation](https://docs.saros.xyz/).
+"
 ---
 
-## Setting up
+import {
+  TypeScriptIcon,
+  RustIcon,
+  SarosLogo,
+} from "/snippets/custom-icons.mdx";
 
-Get your documentation site up and running in minutes.
+Saros offers three development kits, powering Saros' two powerful liquidity engines:
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+- [**`@saros-finance/sdk`**](https://github.com/saros-xyz/saros-sdk): Provides access to the core Saros AMM functionality, exposing methods to interact with liquidity pools, manage positions, and execute swaps directly through the SDK.
+- [**`@saros-finance/dlmm-sdk`**](https://www.npmjs.com/package/@saros-finance/dlmm-sdk): Offers integration with Saros DLMM, the newest next-gen liquidity engine. It offers access to Saros bin-based liquidity management, offering benefits not available to traditional AMMs.
+- [**`saros-dlmm-sdk-rs`**](https://github.com/saros-xyz/saros-dlmm-sdk-rs): A Rust SDK for Saros DLMM, offering a Rust-native interface for interacting with DLMM pools and operations.
 
-## Make it yours
+## Saros SDKs Comparison
 
-Design a docs site that looks great and empowers your users.
+Here’s a quick breakdown of Saros SDKs. With each optimised for a specific environment, use the table to choose the one that best fits your project.
+
+| SDK                           | Language   | Focus                                       | Best For                                      |
+| ----------------------------- | ---------- | ------------------------------------------- | --------------------------------------------- |
+| **`saros-finance/sdk`**       | Typescript | General Saros AMM (trading, liquidity mgmt) | Web apps, dApps, frontend integrations        |
+| **`@saros-finance/dlmm-sdk`** | Typescript | Dynamic Liquidity AMM (DLMM)                | Advanced DeFi apps needing LP optimization    |
+| **`saros-dlmm-sdk-rs`**       | Rust       | DLMM core + Solana-native dev               | On-chain programs, Rust-based Solana projects |
+
+### Quick Decision Flow
+
+- **Building a frontend dApp?** → Use **Saros SDK**.
+- **Backend scripting or custom trading bot?** → Use **DLMM SDK**.
+- **Writing on-chain Solana programs?** → Use **DLMM SDK Rust**.
+
+---
+
+## Our Engines
 
 <Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+  <Card title="Saros-SDK" icon={<TypeScriptIcon />} href="/development">
+    Build on Saros with a single high-level TypeScript SDK.
   </Card>
   <Card
-    title="Customize your site"
-    icon="palette"
+    title="Saros-SDK DLMM"
+    icon={<TypeScriptIcon />}
     href="/essentials/settings"
   >
-    Customize the design and colors of your site to match your brand.
+    Unlock concentrated liquidity and bin-based trading with DLMM.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Saros-SDK rs" icon={<RustIcon />} href="/essentials/navigation">
+    Integrate DLMM with Rust-based apps.
   </Card>
 </Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>

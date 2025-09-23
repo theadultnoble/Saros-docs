@@ -1,0 +1,265 @@
+---
+title: "Swapping"
+description: "This guide will cover executing token swaps on the Saros protocol. We will perform a simulation for the transaction, then execute the swap for the pair **SAROS-USDC.**"
+---
+
+In this guide, the following packages are used:
+
+- `@saros-finance/dlmm-sdk`
+- `@solana/web3.js`
+
+At the end of the guide, you will be able to grab a quote for the given token pair and perform a swap transaction on the pair.
+
+<Info>
+
+All examples in this guide are demonstrated on the **Solana** Devnet, not on Mainnet. Avoid using your personal wallet or private keys for these transactions. Instead, use disposable accounts to ensure you don’t risk exposing sensitive information or losing real funds.
+
+</Info>
+
+The guides in this documentation assume you’re already familiar with standard Solana code and concepts. The focus here is on Saros-specific logic and functionality.
+
+## Configure the `Connection`
+
+The `@saros-finance/dlmm-sdk` package provides a named export, `LiquidityBookServices` which exposes all core SDK functions. Below, we create a new instance of `liquidityBookServices` and configure it to run on `MODE.DEVNET`.
+
+```tsx
+import { LiquidityBookServices, MODE } from "@saros-finance/dlmm-sdk";
+import { Connection } from "@solana/web3.js";
+
+const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+const liquidityBookServices = new LiquidityBookServices({
+  mode: MODE.DEVNET,
+});
+```
+
+## Initialise Wallet and Define Swap Parameters
+
+Here, `payer` is initialised as a `PublicKey` representing the wallet address that will pay for the swap transaction. We also reconstruct the full `Keypair` for that same wallet into `payerKeyPair`,. This will be used when signing any needed transaction.
+
+```tsx
+const payer = new PublicKey("PUBLIC_KEY");
+
+const payerKeyPair = Keypair.fromSecretKey(
+  Uint8Array.from(Buffer.from("PRIVATE-KEY-IN-BASE64==", "base64"))
+);
+```
+
+The pool and token metadata objects shown below already exist on the Saros DEX. Be sure to verify the parameters you use before running a swap to avoid errors. You can visit [Saros](https://dlmm.saros.xyz/pool) to explore additional trading pairs.
+
+```tsx
+const WSOL_TOKEN = {
+  mintAddress: "So11111111111111111111111111111111111111112",
+  symbol: "WSOL",
+  decimals: 9,
+};
+const SAROS_TOKEN = {
+  mintAddress: "mntCAkd76nKSVTYxwu8qwQnhPcEE9JyEbgW6eEpwr1N",
+  symbol: "DEXV3-SAROS",
+  decimals: 6,
+};
+
+const POOL_PARAMS = {
+  address: "C8xWcMpzqetpxwLj7tJfSQ6J8Juh1wHFdT5KrkwdYPQB",
+  baseToken: WSOL_TOKEN_DEVNET,
+  quoteToken: SAROS_TOKEN_DEVNET,
+  slippage: 0.5,
+  hook: "", // config for reward if wanted
+};
+```
+
+## Get Swap Quote
+
+With DLMM, you need to run `getQuote` before executing a token swap. This simulates the swap and returns bin-level details, such as the bin path and the expected token output amount.
+
+Let us construct the function to grab a quote on the swap:
+
+```tsx
+quoteData = await liquidityBookServices.getQuote({
+  amount: BigInt(1e6),
+  isExactInput: true,
+  swapForY: false,
+  pair: new PublicKey(POOL_PARAMS.address),
+  tokenBase: new PublicKey(POOL_PARAMS.baseToken.mintAddress),
+  tokenQuote: new PublicKey(POOL_PARAMS.quoteToken.mintAddress),
+  tokenBaseDecimal: POOL_PARAMS.baseToken.decimals,
+  tokenQuoteDecimal: POOL_PARAMS.quoteToken.decimals,
+  slippage: POOL_PARAMS.slippage,
+});
+```
+
+The `getQuote` function accepts the following arguments:
+
+- `amount`: Trade size of the token to swap.
+- `isExactInput`: Specifies that `amount` is the input amount (not output)
+- `swapForY`: Direction flag relative to the pair’s X/Y ordering. `true`: X→Y, `false`: Y→X
+- `pair`: The pool address where the swap happens
+- `tokenMintX` & `tokenMintY`: The mint address of X & Y tokens
+- `tokenMintXDecimal` & `tokenMintYDecimal`: The decimal of X & Y tokens
+- `slippage`: The maximum acceptable price slippage for the swap (as a percentage)
+
+When running `getQuote` in this example, the swap experiences minimal slippage due to DLMM’s discrete liquidity bins, which concentrate deeper liquidity around the current price.
+
+## Build swap transaction
+
+We can now perform the real token swap using `liquidityBookService.swap` in this example:
+
+```tsx
+const swapTransaction = await liquidityBookServices.swap({
+  amount: quoteAmount,
+  tokenMintX: new PublicKey(POOL_PARAMS.baseToken.mintAddress),
+  tokenMintY: new PublicKey(POOL_PARAMS.quoteToken.mintAddress),
+  otherAmountOffset: quoteData.otherAmountOffset,
+  isExactInput: true,
+  swapForY: false,
+  pair: new PublicKey(POOL_PARAMS.address),
+  hook: liquidityBookServices.hooksConfig,
+  payer: payer,
+});
+```
+
+`swap` will take the following extra/new arguments;
+
+- `otherAmountOffset`: The minimum acceptable slippage for the swap.
+- `hook`: Optional reward/fee hook configuration
+- `payer`: The owner's wallet public address/key.
+
+Notice that the values for both `otherAmountOffset` and `amount` are derived directly from the `getQuote` response.
+
+## Full Example
+
+This is a full working example of performing a swap transaction using Saros DLMM.
+
+```tsx
+import { LiquidityBookServices, MODE } from "@saros-finance/dlmm-sdk";
+import {
+  PublicKey,
+  Keypair,
+  sendAndConfirmTransaction,
+  Connection,
+} from "@solana/web3.js";
+
+const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+
+const WSOL_TOKEN_DEVNET = {
+  id: "wsol",
+  mintAddress: "So11111111111111111111111111111111111111112",
+  symbol: "WSOL",
+  name: "WSOL",
+  decimals: 9,
+};
+const SAROS_TOKEN_DEVNET = {
+  id: "saros",
+  mintAddress: "mntCAkd76nKSVTYxwu8qwQnhPcEE9JyEbgW6eEpwr1N",
+  symbol: "DEXV3-SAROS",
+  name: "Dex V3 Saros",
+  decimals: 6,
+};
+
+const POOL_PARAMS_DEVNET = {
+  address: "C8xWcMpzqetpxwLj7tJfSQ6J8Juh1wHFdT5KrkwdYPQB",
+  baseToken: SAROS_TOKEN_DEVNET,
+  quoteToken: WSOL_TOKEN_DEVNET,
+  slippage: 0.5,
+  hook: "", // config for reward, adding later
+};
+
+const liquidityBookServices = new LiquidityBookServices({
+  mode: MODE.DEVNET,
+});
+
+const payer = new PublicKey("H2X71XBuqB7dEmqkYb5U9pFqUo7A34BqL3qW9A8nRyg7");
+
+const payerKeyPair = Keypair.fromSecretKey(
+  Uint8Array.from(Buffer.from("1ZmJWgcYUnUJyMP4SUV0RQ9SN/nt1tMFHWKtpO3MpCPuHpwhTSYSdOE0UZypDx1L00Vjrp8A9c0h7QBIXLJI7A=="", "base64"))
+);
+
+const pairInfo = await liquidityBookServices.getPairAccount(
+  new PublicKey(POOL_PARAMS_DEVNET.address)
+);
+console.log(pairInfo.tokenMintX.toString(), pairInfo.tokenMintY.toString());
+
+async function swapToken(payer, payerKeyPair) {
+  await connection.requestAirdrop(payer, 1e9); // 1 SOL
+  let quoteAmount;
+  let quoteData;
+
+  try {
+    console.log("Getting quote...");
+
+    quoteData = await liquidityBookServices.getQuote({
+      amount: BigInt(1e6),
+      isExactInput: true,
+      swapForY: false,
+      pair: new PublicKey(POOL_PARAMS.address),
+      tokenMintX: new PublicKey(POOL_PARAMS.baseToken.mintAddress),
+      tokenMintY: new PublicKey(POOL_PARAMS.quoteToken.mintAddress),
+      tokenXDecimal: POOL_PARAMS.baseToken.decimals,
+      tokenYDecimal: POOL_PARAMS.quoteToken.decimals,
+      slippage: POOL_PARAMS.slippage,
+    });
+    quoteAmount = quoteData.amount;
+    console.log("✅ Quote received");
+  } catch (error) {
+    console.error("Error getting quote for swap:", error);
+    throw error;
+  }
+
+  // If getQuote was successful, proceed with the swap transaction
+  try {
+    console.log("Creating swap transaction...");
+
+    const swapTransaction = await liquidityBookServices.swap({
+      amount: quoteAmount,
+      tokenMintX: new PublicKey(POOL_PARAMS.baseToken.mintAddress),
+      tokenMintY: new PublicKey(POOL_PARAMS.quoteToken.mintAddress),
+      otherAmountOffset: quoteData.otherAmountOffset,
+      isExactInput: true,
+      swapForY: false,
+      pair: new PublicKey(POOL_PARAMS.address),
+      hook: liquidityBookServices.hooksConfig,
+      payer: payer,
+    });
+
+    console.log("Signing and sending transaction...");
+
+    const signedTransaction = await sendAndConfirmTransaction(
+      connection,
+      swapTransaction,
+      [payerKeyPair]
+    );
+
+    console.log("✅ Swap transaction successful:", signedTransaction);
+    return signedTransaction;
+  } catch (error) {
+    console.error("Error performing swap transaction:", error);
+    throw error;
+  }
+}
+
+ swapToken(payer, payerKeyPair);
+```
+
+## Output
+
+Running the example code above will produce the following output:
+
+<Frame>
+  <img
+    src="/images/terminal.png"
+    alt="Screenshot of a deployment confirmation message that says All checks have passed."
+    style={{ borderRadius: "0.5rem" }}
+  />
+</Frame>
+
+The identical transaction signature confirms that the transaction was successfully processed.
+
+<Frame>
+  <img
+    src="/images/solscan.png"
+    alt="Screenshot of a deployment confirmation message that says All checks have passed."
+    style={{ borderRadius: "0.5rem" }}
+  />
+</Frame>
+## Next Steps
+
+The next guide covers **adding and removing liquidity** in Saros pools, demonstrating how to manage positions, allocate liquidity across bins, and take full advantage of Saros DLMM’s architecture for efficient liquidity management.

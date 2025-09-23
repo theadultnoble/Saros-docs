@@ -1,0 +1,422 @@
+---
+title: "DLMM API Reference"
+description: "This document is structured as an API reference guide for functions, classes, and data structures provided by the Saros DLMM SDK."
+---
+
+# Classes
+
+Detailed documentation of `LiquidityBookServices`.
+
+# LiquidityBookServices
+
+The main service class that provides all DLMM functionality.
+
+Defined in; `/services/core.ts`
+
+### Constructor
+
+```tsx
+constructor(config: ILiquidityBookConfig)
+```
+
+**Parameters:**
+
+| **Paramters**                                  | **Type**                      |
+| ---------------------------------------------- | ----------------------------- |
+| `config.mode`                                  | `MODE`                        |
+| `config.options.rpcUrl` (optional)             | `string`                      |
+| `config.options.commitmentOrConfig` (optional) | `Commitment/ConnectionConfig` |
+
+Properties
+
+- `lbConfig`: `PublicKey` - Liquidity book configuration address.
+- `hooksConfig`: `PublicKey` - Hooks configuration address.
+- `connection`: `Connection` - Solana RPC connection.
+- `bufferGas`: `number` (optional) - Gas buffer multiplier.
+
+## Core Methods
+
+### **getPairAccount(pair: PublicKey)**
+
+Fetches pair account information.
+
+**Parameters:**
+
+| **Paramter** | **Type**   |
+| ------------ | ---------- |
+| `addresss`   | `PubliKey` |
+
+**Returns**
+
+`Promise<Pair>`
+
+### **getPositionAccount(position: PublicKey)**
+
+Fetches position account information.
+
+**Parameters:**
+
+| **Paramter** | **Type**   |
+| ------------ | ---------- |
+| `addresss`   | `PubliKey` |
+
+**Returns**
+
+`Promise<PositionAccount>`
+
+### **createPairWithConfig(params: CreatePairWithConfigParams)**
+
+Creates a new trading pair.
+
+**Parameters:**
+
+| **Parameter**                          | **Type**    |
+| -------------------------------------- | ----------- |
+| `tokenBase: { decimal, mintAddress }`  | `number`    |
+| `tokenQuote: { decimal, mintAddress }` | `number`    |
+| `binStep`                              | `number`    |
+| `ratePrice`                            | `number`    |
+| `payer`                                | `PublicKey` |
+
+**Returns**
+
+`Promise<{tx: Transaction, pair: string, binArrayLower: string, binArrayUpper: string, hooksConfig: string, activeBin: number}>`
+
+### **createPosition(params: CreatePositionParams)**
+
+Creates a new liquidity position.
+
+**Parameters:**
+
+| **Parameter**        | **Type**      |
+| -------------------- | ------------- |
+| `payer`              | `PublicKey`   |
+| `relativeBinIdLeft`  | `number`      |
+| `relativeBinIdRight` | `number`      |
+| `pair`               | `PublicKey`   |
+| `binArrayIndex`      | `number`      |
+| `positionMint`       | `PublicKey`   |
+| `transaction`        | `Transaction` |
+
+**Returns**
+
+`Promise<{position: string}>`
+
+### **addLiquidityIntoPosition(params: AddLiquidityIntoPositionParams)**
+
+Adds liquidity to an existing position.
+
+**Parameters:**
+
+| **Parameter**           | **Type**         |
+| ----------------------- | ---------------- |
+| `positionMint`          | `PublicKey`      |
+| `payer`                 | `PublicKey`      |
+| `pair`                  | `PublicKey`      |
+| `transaction`           | `Transaction`    |
+| `liquidityDistribution` | `Distribution[]` |
+| `amountY`               | `number`         |
+| `amountX`               | `number`         |
+| `binArrayLower`         | `PublicKey`      |
+| `binArrayUpper`         | `PublicKey`      |
+
+Returns
+
+`Promise<void>`
+
+### **removeMultipleLiquidity(params: RemoveMultipleLiquidityParams)**
+
+Removes liquidity from multiple positions.
+
+**Parameters:**
+
+| **Parameter**     | **Type**                                            |
+| ----------------- | --------------------------------------------------- |
+| `maxPositionList` |                                                     |
+| `payer`           | `PublicKey`                                         |
+| `type`            | `"removeBoth"/"removeBaseToken"/"removeQuoteToken”` |
+| `pair`            | `PublicKey`                                         |
+| `tokenMintX`      | `PublicKey`                                         |
+| `tokenMintY`      | `PublicKey`                                         |
+| `activeId`        | `number`                                            |
+
+**Returns**
+
+`Promise<RemoveMultipleLiquidityResponse>`
+
+### **getUserPositions(params: UserPositionsParams)**
+
+Gets all user positions for a pair.
+
+**Parameters:**
+
+| **Parameter** | **Type**    |
+| ------------- | ----------- |
+| `payer`       | `PublicKey` |
+| `pair`        | `PublicKey` |
+
+**Returns**
+
+`Promise<PositionInfo[]>`
+
+### **getQuote(params: GetTokenOutputParams)**
+
+Gets a quote for a swap operation.
+
+**Parameters**:
+
+| **Parameter**       | **Type**    |
+| ------------------- | ----------- |
+| `pair`              | `PublicKey` |
+| `tokenBase`         | `PublicKey` |
+| `tokenQuote`        | `PublicKey` |
+| `amount`            | `bigint`    |
+| `swapForY`          | `boolean`   |
+| `isExactInput`      | `boolean`   |
+| `tokenBaseDecimal`  | `number`    |
+| `tokenQuoteDecimal` | `number`    |
+| `slippage`          | `number`    |
+
+**Returns**
+
+`Promise<GetTokenOutputResponse>`
+
+### **swap(params: SwapParams)**
+
+Creates a swap transaction.
+
+**Parameter:**
+
+| **Parameter**       | **Type**    |
+| ------------------- | ----------- |
+| `tokenMintX`        | `PublicKey` |
+| `tokenMintY`        | `PublicKey` |
+| `amount`            | `bigint`    |
+| `otherAmountOffset` | `bigint`    |
+| `swapForY`          | `boolean`   |
+| `isExactInput`      | `boolean`   |
+| `pair`              | `PublicKey` |
+| `hook`              | `PublicKey` |
+| `payer`             | `PublicKey` |
+
+**Returns**
+
+`Promise<Transaction>`
+
+## Utility Methods
+
+### **getBinArray(params: GetBinArrayParams)**
+
+Gets or initialises bin array.
+
+**Parameters:**
+
+| **Parameter**            | **Type**      |
+| ------------------------ | ------------- |
+| `binArrayIndex`          | `number`      |
+| `pair`                   | `PublicKey`   |
+| `payer` (optional)       | `PublicKey`   |
+| `transaction` (optional) | `Transaction` |
+
+**Returns**
+
+`Promise<PublicKey>`
+
+### **fetchPoolAddresses()**
+
+Fetches all pool addresses.
+
+**Parameters:**
+
+| **Parameter** | **Type** |
+| ------------- | -------- |
+| `null`        | `null`   |
+
+**Returns**
+
+`Promise<string[]>`
+
+### **fetchPoolMetadata(pair: string)**
+
+Fetches pool metadata.
+
+**Parameters:**
+
+| **Parameter** | **Type** |
+| ------------- | -------- |
+| `pair`        | `string` |
+
+Returns
+
+`Promise<PoolMetadata>`
+
+---
+
+# Utility Functions
+
+All utility functions for Saros DLMM SDK.
+
+Defined in; `/utils/index.ts`
+
+### **createUniformDistribution(params: CreateLiquidityDistributionParams)**
+
+Creates uniform liquidity distribution across bins.
+
+**Parameters**:
+
+| **Parameter** | **Type**           |
+| ------------- | ------------------ |
+| `shape`       | `LiquidityShape`   |
+| `binRange`    | `[number, number]` |
+
+**Returns**:
+
+`Distribution[]`
+
+### **getMaxPosition(range: [number, number], activeId: number)**
+
+Calculates maximum positions for a bin range.
+
+**Parameters**:
+
+| **Parameter** | **Type**           |
+| ------------- | ------------------ |
+| `range`       | `[number, number]` |
+| `activeId`    | `number`           |
+
+Returns
+
+`number[]`
+
+### **getMaxBinArray(range: [number, number], activeId: number)**
+
+Calculates bin arrays needed for a range.
+
+**Parameters**:
+
+| **Parameter** | **Type**           |
+| ------------- | ------------------ |
+| `range`       | `[number, number]` |
+| `activeId`    | `number`           |
+
+**Returns**
+
+`Array<{binArrayLowerIndex: number, binArrayUpperIndex: number}>`
+
+### **getBinRange(index: number, activeId: number)**
+
+Gets the bin range for a position index.
+
+**Parameters:**
+
+| **Parameter** | **Type** |
+| ------------- | -------- |
+| `index`       | `number` |
+| `activeId`    | `number` |
+
+**Returns**
+
+`{range: [number, number], binLower: number, binUpper: number}`
+
+### **findPosition(index: number, activeBin?: number)**
+
+Creates a position finder function.
+
+**Parameters:**
+
+| **Parameter**          | **Type** |
+| ---------------------- | -------- |
+| `index`                | `number` |
+| `activeBin` (optional) | `number` |
+
+**Returns**
+
+`(position: PositionInfo) => boolean`
+
+### **getGasPrice(connection: Connection)**
+
+Gets the current gas price from the network
+
+**Parameters:**
+
+| **Parameter** | **Type**     |
+| ------------- | ------------ |
+| `connection`  | `connection` |
+
+**Returns**
+
+`Promise<number>`
+
+---
+
+# Types
+
+Complete type definitions for all parameters and responses
+
+## Configuration Types
+
+### MODE
+
+```tsx
+enum MODE {
+  TESTNET = "testnet",
+  DEVNET = "devnet",
+  MAINNET = "mainnet",
+}
+```
+
+### ILiquidityBookConfig
+
+```tsx
+interface ILiquidityBookConfig {
+  mode: MODE;
+  options?: {
+    rpcUrl: string;
+    commitmentOrConfig?: Commitment | ConnectionConfig;
+  };
+}
+```
+
+### Distribution
+
+```tsx
+interface Distribution {
+  relativeBinId: number;
+  distributionX: number;
+  distributionY: number;
+}
+```
+
+## Enums
+
+### LiquidityShape
+
+```tsx
+enum LiquidityShape {
+  Spot = "Spot",
+  Curve = "Curve",
+  BidAsk = "BidAsk",
+}
+```
+
+---
+
+# Constants
+
+Network configs, protocol constants, and bin step configurations
+
+### Network Configuration
+
+```tsx
+const CONFIG = {
+  [MODE.TESTNET]: {
+    rpc: "<https://api.testnet.solana.com>",
+  },
+  [MODE.DEVNET]: {
+    rpc: "<https://api.devnet.solana.com>",
+  },
+  [MODE.MAINNET]: {
+    rpc: "<https://api.mainnet-beta.solana.com>",
+  },
+};
+```

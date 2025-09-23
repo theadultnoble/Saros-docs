@@ -1,80 +1,45 @@
----
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
----
+The Saros DLMM SDK is a TypeScript native package for interacting with Saros' Dynamic Liquidity Market Maker (DLMM) on Solana. It provides programmatic access to DLMM pools, enabling the creation and management of positions. DLMM is an enhancement of the original [Saros AMM](https://www.npmjs.com/package/@saros-finance/sdk), introducing a bin-based architecture that organises liquidity into discrete price bins for concentrated and precise liquidity management.
 
-## Get started in three steps
+This guide introduces the **Saros** DLMM SDK, showing you how to set it up and interact programmatically with DLMM pools on Solana.
 
-Get your documentation site running locally and make your first customization.
+## Installation
 
-### Step 1: Set up your local environment
+Get started by installing the SDK using your preferred package manager:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+```bash
+npm install @saros-finance/dlmm-sdk
+```
 
-### Step 2: Deploy your changes
+or
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+```tsx
+yarn add @saros-finance/dlmm-sdk
+```
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+Import it into your project:
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+```tsx
+import sarosSDK from "@saros-finance/dlmm-sdk";
+const { LiquidityBookServices } = sarosSDK;
+```
 
-### Step 3: Go live
+## Initialise Connection & Services
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+Connect to Solana and initialise the liquidity service:
 
-## Next steps
+```tsx
+import { Connection, PublicKey } from "@solana/web3.js";
 
-Now that you have your docs running, explore these key features:
+const connection = new Connection("https://api.mainnet-beta.solana.com");
+const liquidityBookServices = new LiquidityBookServices({ connection });
+```
 
-<CardGroup cols={2}>
+`LiquidityBookServices` provides the core SDK service to query pools, positions, and execute transactions.
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+You can now start building amazing projects with Saros!
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+For a complete documentation of the SDK's offerings, see the **[DLMM Technical Reference]()**.
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+## Next Steps
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+In the next guide you’ll learn how to execute trades between SPL tokens directly through Saros DLMM. You will leverage its dynamic liquidity management to achieve efficient pricing, reduced slippage, compared to traditional AMMs.
