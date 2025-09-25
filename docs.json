@@ -14,32 +14,34 @@
         "tab": "Guides",
         "groups": [
           {
-            "group": "Getting started",
-            "pages": ["index", "quickstart"]
+            "group": "Saros (The DEX tool)",
+            "pages": ["index", "essentials/onboarding"]
           },
           {
             "group": "AMM SDK",
-            "pages": ["quickstart", "essentials/swapping", "essentials/staking"]
+            "pages": [
+              "essentials/amm-quickstart",
+              "essentials/amm-swapping",
+              "essentials/amm-staking"
+            ]
           },
           {
             "group": "DLMM SDK",
             "pages": [
-              "quickstart",
-              "essentials/swapping",
-              "essentials/liquidity",
-              "essentials/positions-DLMM",
-              "essentials/farming",
-              "essentials/reference"
+              "dlmm-quickstart",
+              "essentials/dlmm-swapping",
+              "essentials/dlmm-liquidity",
+              "essentials/dlmm-reference"
             ]
           },
           {
-            "group": "Rust SDK",
-            "pages": ["quickstart", "essentials/rust-examples"]
+            "group": "DLMM-Rust SDK",
+            "pages": ["essentials/rust-dlmm-quickstart"]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "DLMM Playground",
         "groups": [
           {
             "group": "API documentation",
@@ -48,10 +50,9 @@
           {
             "group": "Endpoint examples",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/endpoint/get-pools",
+              "api-reference/endpoint/get-quotes",
+              "api-reference/endpoint/swap"
             ]
           }
         ]
