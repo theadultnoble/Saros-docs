@@ -17,14 +17,7 @@
             "group": "Saros (The DEX tool)",
             "pages": ["index", "essentials/onboarding"]
           },
-          {
-            "group": "AMM SDK",
-            "pages": [
-              "essentials/amm-quickstart",
-              "essentials/amm-swapping",
-              "essentials/amm-staking"
-            ]
-          },
+
           {
             "group": "DLMM SDK",
             "pages": [
