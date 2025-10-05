@@ -1,0 +1,128 @@
+---
+title: "Onboarding"
+description: "This guide will cover onboarding the reader onto the Saros Toolkits, it's protocols and what is possible with the SDKs"
+---
+
+The Saros SDKs are built to interact with its AMM and DLMM pool protocol infrastructure. This guide will get you up to speed understanding what the Automatic Market Maker and Dynamic Liquidity Market Marker are and how Saros performs across it’s SDKs.
+
+## Automatic Market Maker
+
+The Saros AMM (Automated Market Maker) is the foundational liquidity protocol powering the Saros DEX on Solana. It enables decentralized token swaps by maintaining continuous on-chain liquidity through token pairs held in liquidity pools. This design provides instant, permissionless swaps and allows liquidity providers (LPs) to earn fees by supplying tokens to pools. The AMM SDK extends this functionality to developers by exposing the full AMM logic through a TypeScript interface.
+
+The SDK offers the following functionality;
+
+- Execute swaps, integrating Saros AMM liquidity.
+- Retrieve pool and token metadata
+- Provide or withdraw liquidity
+- Stake tokens
+- Query LP positions for analytics
+- Yield Farming for profit optimizing
+
+The Saros AMM protocol offers a complete toolkit for building, testing, and scaling decentralized trading and liquidity applications on Solana.
+
+## Dynamic Liquidity Market Marker
+
+The Saros DLMM (Dynamic Liquidity Market Maker) is the next-generation liquidity protocol of the Saros DEX on Solana. It introduces a bin-based architecture, where liquidity is distributed across discrete price bins rather than spread uniformly along the price curve. Each bin represents a specific price level, allowing liquidity providers (LPs) to concentrate capital within chosen ranges for higher efficiency and greater control over exposure. The DLMM TypeScript SDK serves as the primary interface to interact with the DLMM program.
+
+With the DLMM TypeScript SDK, you can:
+
+- Query pool data such as active bins and current price levels.
+- Retrieve quotes to simulate swaps and view detailed bin path and outputs before execution.
+- Execute swaps that dynamically route through bins for optimal pricing and minimal slippage.
+- Add or remove liquidity across selected bin ranges, defining strategies for liquidity distribution.
+- Manage positions programmatically tracking bin-level exposure.
+
+## Prerequisites
+
+This developer documentation includes guides for interacting with both the DLMM Typescript SDK, and the DLMM Rust SDK. Both SDKs may share some similar prerequisites to get started.
+
+<Info>
+
+The Typescript AMM SDK is currently not managed by the Saros team and you may experience some errors getting it running. Please reach out to the Saros support team if you experience any difficulty.
+
+</Info>
+
+- Knowledge of basic Solana development and DeFi concepts
+- Node.js, TypeScript and npm installed
+- Rust 1.70+, Cargo installed
+- @solana/web3.js
+- solana_client
+- solana_sdk
+
+## Installation
+
+Get started and install the SDKs like this:
+
+```bash
+# Install DLMM TypeScript SDK
+npm install @saros-finance/dlmm-sdk
+
+# Install DLMM Rust SDK - Add to Cargo.toml
+saros-dlmm = "0.1.0"
+# ---
+cargo add saros-dlmm-sdk-rs
+```
+
+<Info>
+  As of the time of authoring this guide, the DLMM Rust SDK has not been
+  officially packaged and published to [Crate.io](http://Crate.io) as a
+  consumable library. The above and following guides assume that by the time
+  these guides are public the Saros team would have done that. If that is not
+  the case please refer to the [DLMM Rust Integration
+  Guide](https://www.notion.so/DLMM-Rust-Integration-Guide-2832c2cd026980f59428ee784ded3995?pvs=21).
+</Info>
+
+## Basic Usage
+
+TypeScript DLMM:
+
+```tsx
+import { LiquidityBookServices, MODE } from "@saros-finance/dlmm-sdk";
+
+// Initialize the DLMM service for the selected network (MAINNET or DEVNET)
+const liquidityBookServices = new LiquidityBookServices({ mode: MODE.MAINNET });
+
+// Fetch a swap quote using the DLMM SDK
+const swapQuote = await liquidityBookServices.getQuote({
+  amount, // BigInt — amount to swap
+  isExactInput, // Boolean — true if 'amount' is input, false if it's output
+  swapForY, // Boolean — true to swap token X for Y, false for Y to X
+  pair, // PublicKey — liquidity pair address
+  tokenBase, // PublicKey — base token address
+  tokenQuote, // PublicKey — quote token address
+  tokenBaseDecimal, // Number — decimals of the base token
+  tokenQuoteDecimal, // Number — decimals of the quote token
+  slippage, // Number — allowed slippage (e.g., 0.01 = 1%)
+});
+
+// Execute the quoted swap
+await swapQuote();
+```
+
+Rust DLMM:
+
+```rust
+use saros_dlmm_sdk::{client::DlmmClient, types::NetworkMode};
+use solana_sdk::pubkey::Pubkey;
+
+#[tokio::main]
+async fn main() {
+    // Connect to Saros DLMM on Mainnet
+    let client = DlmmClient::new(NetworkMode::Mainnet);
+
+    // Define swap parameters
+    let pair = Pubkey::from_str("PAIR_ADDRESS").unwrap();
+    let token_x = Pubkey::from_str("TOKEN_X").unwrap();
+    let token_y = Pubkey::from_str("TOKEN_Y").unwrap();
+
+    // Fetch swap quote
+    let quote = client
+        .get_swap_quote(pair, token_x, token_y, 1_000_000, true, 100)
+        .await
+        .unwrap();
+
+    println!("{:?}", quote);
+}
+```
+
+Ready to start building? Jump straight into a [Quick Start Tutorial](https://www.notion.so/Getting-Started-25d2c2cd0269800f888cd262d4781c61?pvs=21).
