@@ -29,7 +29,10 @@
           },
           {
             "group": "DLMM-Rust SDK",
-            "pages": ["essentials/rust-dlmm-quickstart"]
+            "pages": [
+              "essentials/rust-dlmm-quickstart",
+              "essentials/rust-dlmm-integration"
+            ]
           }
         ]
       },
